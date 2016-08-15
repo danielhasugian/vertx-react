@@ -26,6 +26,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.sql.SQLConnection;
+import io.vertx.ext.web.RoutingContext;
 
 /**
  *
@@ -35,13 +36,14 @@ public class BaseSQLClient {
 
 	protected List<JsonArray> jsonArrays;
 	protected JsonObject jsonObject;
+	private HandleService handleService = new HandleService();
 
-	public JsonObject executeQuery(String queryString, SQLConnection sqlConnection, JsonArray jsonArray,
+	public void executeQuery(RoutingContext routingContext, String queryString, SQLConnection sqlConnection, JsonArray jsonArray,
 			OperationQuery type) {
-		return executeQuerySuper(queryString, sqlConnection, jsonArray, type);
+		executeQuerySuper(routingContext, queryString, sqlConnection, jsonArray, type);
 	}
 
-	public JsonObject executeQuerySuper(String queryString, SQLConnection sqlConnection, JsonArray jsonArray,
+	public void executeQuerySuper(RoutingContext routingContext, String queryString, SQLConnection sqlConnection, JsonArray jsonArray,
 			OperationQuery type) {
 		jsonObject = new JsonObject();
 		jsonArrays = new ArrayList<>();
@@ -49,30 +51,31 @@ public class BaseSQLClient {
 		switch (type) {
 		case SELECT:
 			if (jsonArray == null) {
-				getSelectedQuery(queryString, sqlConnection);
+				getSelectedQuery(routingContext, queryString, sqlConnection);
 			} else {
-				getSelectedQueryWithParams(queryString, jsonArray, sqlConnection);
+				getSelectedQueryWithParams(routingContext, queryString, jsonArray, sqlConnection);
 			}
+			break;
 		case UPDATE:
 			if (jsonArray == null) {
-				getUpdatedQuery(queryString, sqlConnection);
+				getUpdatedQuery(routingContext, queryString, sqlConnection);
 			} else {
-				getUpdatedQueryWithParams(queryString, jsonArray, sqlConnection);
+				getUpdatedQueryWithParams(routingContext, queryString, jsonArray, sqlConnection);
 			}
+			break;
 		case DELETE:
 			if (jsonArray == null) {
-				getUpdatedQuery(queryString, sqlConnection);
+				getUpdatedQuery(routingContext, queryString, sqlConnection);
 			} else {
-				getUpdatedQueryWithParams(queryString, jsonArray, sqlConnection);
+				getUpdatedQueryWithParams(routingContext, queryString, jsonArray, sqlConnection);
 			}
+			break;
 		default:
 			break;
 		}
-
-		return jsonObject;
 	}
 
-	private void getSelectedQuery(String queryString, SQLConnection sqlConnection) {
+	private void getSelectedQuery(RoutingContext routingContext, String queryString, SQLConnection sqlConnection) {
 		sqlConnection.query(queryString, exec -> {
 			if (exec.succeeded()) {
 				jsonArrays = exec.result().getResults();
@@ -82,10 +85,11 @@ public class BaseSQLClient {
 				jsonObject.put("failed", "true");
 				logger.error("getSelectedQuery", exec.cause());
 			}
+			handleService.handlingResponse(routingContext, jsonObject);
 		});
 	}
 
-	private void getUpdatedQuery(String queryString, SQLConnection sqlConnection) {
+	private void getUpdatedQuery(RoutingContext routingContext, String queryString, SQLConnection sqlConnection) {
 		sqlConnection.update(queryString, exec -> {
 			if (exec.succeeded()) {
 				jsonObject.put("failed", "false");
@@ -93,10 +97,11 @@ public class BaseSQLClient {
 				logger.error("getUpdatedQuery", exec.cause());
 				jsonObject.put("failed", "true");
 			}
+			handleService.handlingResponse(routingContext, jsonObject);
 		});
 	}
 
-	private void getSelectedQueryWithParams(String queryString, JsonArray jsonArray, SQLConnection sqlConnection) {
+	private void getSelectedQueryWithParams(RoutingContext routingContext, String queryString, JsonArray jsonArray, SQLConnection sqlConnection) {
 		sqlConnection.queryWithParams(queryString, jsonArray, exec -> {
 			if (exec.succeeded()) {
 				jsonArrays = exec.result().getResults();
@@ -106,10 +111,11 @@ public class BaseSQLClient {
 				logger.error("getSelectedQuery", exec.cause());
 				jsonObject.put("failed", "true");
 			}
+			handleService.handlingResponse(routingContext, jsonObject);
 		});
 	}
 
-	private void getUpdatedQueryWithParams(String queryString, JsonArray jsonArray, SQLConnection sqlConnection) {
+	private void getUpdatedQueryWithParams(RoutingContext routingContext, String queryString, JsonArray jsonArray, SQLConnection sqlConnection) {
 		sqlConnection.updateWithParams(queryString, jsonArray, exec -> {
 			if (exec.succeeded()) {
 				jsonObject.put("failed", "false");
@@ -117,6 +123,7 @@ public class BaseSQLClient {
 				logger.error("getUpdatedQuery", exec.cause());
 				jsonObject.put("failed", "true");
 			}
+			handleService.handlingResponse(routingContext, jsonObject);
 		});
 	}
 

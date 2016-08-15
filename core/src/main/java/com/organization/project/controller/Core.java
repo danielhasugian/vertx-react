@@ -15,7 +15,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 
 public class Core extends AbstractVerticle {
 
-	private static final int LISTENED_PORT = 88;
+	private static final int LISTENED_PORT = 2000;
 	private static final int MAX_INITIAL_LINE_LENGTH = 16384;
 	private Router router;
 	private EmployeController employeController;
