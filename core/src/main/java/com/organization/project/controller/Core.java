@@ -20,7 +20,8 @@ public class Core extends AbstractVerticle {
 	private Router router;
 	private EmployeController employeController;
 	private SamplingController samplingController;
-	
+	private DivisionController divisionController;
+
 	private PostgreSqlService postgreSqlService;
 	private Vertx vertx;
 	private JDBCClient jdbc;
@@ -35,15 +36,16 @@ public class Core extends AbstractVerticle {
 		initialCore();
 
 		router = Router.router(vertx);
-		//handleService
+		// handleService
 		handleService();
 		jdbc = postgreSqlService.setUp(vertx, "createShared");
-		
+
 		handleController();
 
 		router.route().handler(BodyHandler.create());
 		router.get("/").handler(routingContext -> {
-			routingContext.response().putHeader("content-type", ContentTypeHeader.TEXTHTML.getMimeType()).end(getMessage());
+			routingContext.response().putHeader("content-type", ContentTypeHeader.TEXTHTML.getMimeType())
+					.end(getMessage());
 		});
 
 		// Setup EmployeController
@@ -53,12 +55,19 @@ public class Core extends AbstractVerticle {
 		router.post("/employees/setup").handler(employeController::handleSetUpInitialData);
 		router.get("/employees/:employeeId").handler(employeController::handleGetEmployee);
 		router.post("/employees/:employeeId").handler(employeController::handleAddEmployee);
-		
-		//Setup User
+
+		// Setup User
 		router.get("/sampling").handler(samplingController::getDataSampling);
 		router.post("/sampling/add").handler(samplingController::handleAddSampling);
 		router.post("/sampling/update").handler(samplingController::handleUpdateSampling);
 		router.post("/sampling/delete").handler(samplingController::handleDeleteSampling);
+
+		// Setup employee division using cassandra
+		router.get("/division/employees").handler(divisionController::getListDivision);
+		router.delete("/division/employees").handler(divisionController::deleteOne);
+		router.put("/division/employees").handler(divisionController::Update);
+		router.put("/division/employees/create").handler(divisionController::Create);
+		router.get("/division/employees/get/:id").handler(divisionController::getOneBasedOnId);
 
 		vertx.createHttpServer(serverOption()).requestHandler(router::accept)
 				.listen(config().getInteger("http.port", LISTENED_PORT), result -> {
@@ -93,5 +102,6 @@ public class Core extends AbstractVerticle {
 	private void handleController() {
 		employeController = new EmployeController();
 		samplingController = new SamplingController(jdbc);
+		divisionController = new DivisionController();
 	}
 }
