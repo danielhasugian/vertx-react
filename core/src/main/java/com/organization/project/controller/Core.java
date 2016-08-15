@@ -19,7 +19,7 @@ public class Core extends AbstractVerticle {
 	private static final int MAX_INITIAL_LINE_LENGTH = 16384;
 	private Router router;
 	private EmployeController employeController;
-	private UserController userController;
+	private SamplingController samplingController;
 	
 	private PostgreSqlService postgreSqlService;
 	private Vertx vertx;
@@ -55,7 +55,10 @@ public class Core extends AbstractVerticle {
 		router.post("/employees/:employeeId").handler(employeController::handleAddEmployee);
 		
 		//Setup User
-		router.get("/user/sampling").handler(userController::getDataExample);
+		router.get("/sampling").handler(samplingController::getDataSampling);
+		router.post("/sampling/add").handler(samplingController::handleAddSampling);
+		router.post("/sampling/update").handler(samplingController::handleUpdateSampling);
+		router.post("/sampling/delete").handler(samplingController::handleDeleteSampling);
 
 		vertx.createHttpServer(serverOption()).requestHandler(router::accept)
 				.listen(config().getInteger("http.port", LISTENED_PORT), result -> {
@@ -89,6 +92,6 @@ public class Core extends AbstractVerticle {
 
 	private void handleController() {
 		employeController = new EmployeController();
-		userController = new UserController(jdbc);
+		samplingController = new SamplingController(jdbc);
 	}
 }
