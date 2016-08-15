@@ -32,6 +32,7 @@ public class UserController {
 				jsonObject = baseClient.executeQuery("select nama from t_testing", sqlConnection, null,
 						OperationQuery.SELECT);
 				handleService.handlingResponse(routingContext, jsonObject);
+				
 			} else {
 				handleService.sendError(404, response);
 			}
